@@ -38,10 +38,7 @@ button.alt{background:transparent;color:var(--ink);border:1px solid var(--line);
 <h1>Quelques questions sur votre travail</h1>
 <p class="intro">Je prépare un outil pour aider les artisans à répondre plus vite à leurs clients sur WhatsApp. Je ne vends rien : j’ai juste besoin de votre expérience. 3 minutes, aucune bonne ou mauvaise réponse.</p>
 <form id="f" onsubmit="return false"></form>
-<div id="out">
-<p class="note">Si WhatsApp ne s’ouvre pas, copiez ce texte et envoyez-le-moi.</p>
-<textarea id="txt" readonly></textarea>
-</div>
+
 </main>
 <script>
 var Q=[
@@ -81,23 +78,31 @@ Q.forEach(function(q){
   var t=q.k=="area"?document.createElement("textarea"):document.createElement("input");
   if(q.k=="text")t.type="text";t.id=q.id;d.appendChild(t)}
  f.appendChild(d)});
-var b=document.createElement("button");b.textContent="Envoyer mes réponses sur WhatsApp";f.appendChild(b);
-var c=document.createElement("button");c.className="alt";c.textContent="Copier mes réponses";f.appendChild(c);
-function build(){
- var s="Bonjour, voici mes réponses :\n",k=0;
+var KEY="7bf69ddc-b36f-4aab-ad78-0d0da4af1100";
+var b=document.createElement("button");b.textContent="Envoyer mes réponses";f.appendChild(b);
+var m=document.createElement("p");m.className="note";m.setAttribute("role","status");f.appendChild(m);
+function collect(){
+ var o={},k=0,has=false;
  Q.forEach(function(q){
   if(Array.isArray(q))return;k++;var v="";
   if(q.k=="radio"||q.k=="checkbox"){
    v=Array.prototype.map.call(f.querySelectorAll('input[name="'+q.id+'"]:checked'),function(i){return i.value}).join(", ");
    var x=document.getElementById(q.id+"_x");if(x&&x.value.trim())v+=(v?" – ":"")+x.value.trim();
   }else v=document.getElementById(q.id).value.trim();
-  if(v)s+="\n"+k+". "+q.t+"\n→ "+v});
- return s}
-function show(m){var o=document.getElementById("out");o.style.display="block";document.getElementById("txt").value=m}
-b.onclick=function(){var m=build();show(m);window.open("https://wa.me/?text="+encodeURIComponent(m),"_blank")};
-c.onclick=function(){var m=build();show(m);
- try{navigator.clipboard.writeText(m).then(function(){c.textContent="Copié ✓"},function(){document.getElementById("txt").select()})}
- catch(e){document.getElementById("txt").select()}};
+  if(v){has=true;o[k+". "+q.t]=v}});
+ return has?o:null}
+function fail(){b.disabled=false;b.textContent="Envoyer mes réponses";m.textContent="L’envoi a échoué. Vérifiez votre connexion et réessayez."}
+b.onclick=function(){
+ var a=collect();
+ if(!a){m.textContent="Répondez à au moins une question avant d’envoyer.";return}
+ if(KEY.indexOf("COLLE")===0){m.textContent="Formulaire non configuré : la clé d’envoi est manquante.";return}
+ var body={access_key:KEY,subject:"Nouvelle réponse – formulaire artisans",from_name:"Formulaire artisans"};
+ for(var p in a)body[p]=a[p];
+ b.disabled=true;b.textContent="Envoi…";m.textContent="";
+ fetch("https://api.web3forms.com/submit",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify(body)})
+  .then(function(r){return r.json()})
+  .then(function(j){if(j.success){f.innerHTML='<div class="q"><p>Merci beaucoup, vos réponses sont bien envoyées.</p></div>';window.scrollTo(0,0)}else fail()})
+  .catch(fail)};
 </script>
 </body>
 </html>
