@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Questions rapides pour artisans</title>
+<style>
+:root{--bg:#f4f6f5;--card:#fff;--ink:#17282b;--mute:#5b6d70;--line:#d3dcdc;--acc:#0b7a82;--accink:#fff;--sel:#dff1f2;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101a1c;--card:#192528;--ink:#e8f0f0;--mute:#9bb0b3;--line:#2d4044;--acc:#3cc1ca;--accink:#06282b;--sel:#17393d;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#101a1c;--card:#192528;--ink:#e8f0f0;--mute:#9bb0b3;--line:#2d4044;--acc:#3cc1ca;--accink:#06282b;--sel:#17393d;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:620px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.6rem;line-height:1.2;margin:8px 0 8px}
+.intro{color:var(--mute);margin:0 0 20px}
+h2{font-size:1.05rem;margin:28px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--acc)}
+.q{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin:0 0 12px}
+.q>p{margin:0 0 10px;font-weight:600}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opts label{display:block;border:1px solid var(--line);border-radius:8px;padding:10px 14px;cursor:pointer;min-height:44px}
+.opts label:has(input:checked){background:var(--sel);border-color:var(--acc);font-weight:600}
+.opts input{position:absolute;opacity:0;pointer-events:none}
+.opts label:has(input:focus-visible),input:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+input[type=text],textarea{width:100%;font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-top:8px}
+textarea{min-height:90px;resize:vertical}
+.q>input[type=text]:first-of-type,.q>textarea:first-of-type{margin-top:0}
+button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:14px 18px;min-height:48px;cursor:pointer;width:100%;background:var(--acc);color:var(--accink)}
+button.alt{background:transparent;color:var(--ink);border:1px solid var(--line);margin-top:10px}
+#out{display:none;margin-top:16px}
+#out textarea{min-height:200px;font-size:.9rem}
+.note{color:var(--mute);font-size:.9rem;margin:10px 0 0}
+</style>
+</head>
+<body>
+<main>
+<h1>Quelques questions sur votre travail</h1>
+<p class="intro">Je prépare un outil pour aider les artisans à répondre plus vite à leurs clients sur WhatsApp. Je ne vends rien : j’ai juste besoin de votre expérience. 3 minutes, aucune bonne ou mauvaise réponse.</p>
+<form id="f" onsubmit="return false"></form>
+<div id="out">
+<p class="note">Si WhatsApp ne s’ouvre pas, copiez ce texte et envoyez-le-moi.</p>
+<textarea id="txt" readonly></textarea>
+</div>
+</main>
+<script>
+var Q=[
+["Votre travail"],
+{id:"metier",t:"Quel est votre métier ?",k:"radio",o:["Plombier","Électricien","Peintre / carreleur","Climatisation / chauffage","Serrurier / vitrier","Autre"],x:"Précisez si besoin"},
+{id:"equipe",t:"Vous travaillez…",k:"radio",o:["Seul","À 2 à 5","À plus de 5"]},
+{id:"ville",t:"Dans quelle ville ?",k:"text"},
+["Vos messages clients"],
+{id:"wa",t:"Comment les clients vous contactent-ils surtout ?",k:"radio",o:["WhatsApp","Appel téléphone","Les deux","Autre"]},
+{id:"nb",t:"Combien de messages clients par jour environ ?",k:"radio",o:["0 à 5","6 à 15","16 à 30","Plus de 30"]},
+{id:"types",t:"Ils vous envoient quoi ? (plusieurs choix)",k:"checkbox",o:["Textes","Messages vocaux","Photos","Position (localisation)"]},
+{id:"delai",t:"Vous répondez en général…",k:"radio",o:["En moins de 15 min","Dans l’heure","Le soir","Parfois jamais"]},
+{id:"perdus",t:"Combien de clients perdez-vous par mois faute de réponse rapide ?",k:"radio",o:["Aucun","1 à 3","4 à 10","Plus de 10"]},
+{id:"valeur",t:"Un client moyen vous rapporte environ combien (en MAD) ?",k:"text"},
+{id:"histoire",t:"Racontez la dernière fois où vous avez raté un client. Que s’est-il passé ?",k:"area"},
+["Ce que vous utilisez déjà"],
+{id:"outil",t:"Avez-vous déjà quelque chose pour vous aider (secrétaire, appli, réponse automatique) ? Lequel ?",k:"area"},
+["Une idée à tester"],
+{id:"idee",t:"Imaginez un assistant qui lit les messages, vocaux et photos de vos clients, prépare la réponse et vous demande juste « OK » d’un clic. Cela vous intéresse ?",k:"radio",o:["Oui, beaucoup","Un peu","Non"]},
+{id:"prix",t:"Combien seriez-vous prêt à payer par mois ?",k:"radio",o:["Rien","Moins de 100 MAD","100 à 200 MAD","200 à 400 MAD","Plus de 400 MAD"]},
+{id:"test",t:"Accepteriez-vous de l’essayer gratuitement pendant 30 jours ?",k:"radio",o:["Oui","Peut-être","Non"]},
+{id:"avis",t:"Qu’est-ce qui vous ferait peur ou vous gênerait dans un tel assistant ?",k:"area"},
+{id:"nom",t:"Votre prénom et numéro (facultatif, pour vous recontacter)",k:"text"}
+];
+var f=document.getElementById("f"),n=0;
+Q.forEach(function(q){
+ if(Array.isArray(q)){var h=document.createElement("h2");h.textContent=q[0];f.appendChild(h);return}
+ n++;var d=document.createElement("div");d.className="q";
+ var p=document.createElement("p");p.textContent=n+". "+q.t;d.appendChild(p);
+ if(q.k=="radio"||q.k=="checkbox"){
+  var w=document.createElement("div");w.className="opts";
+  q.o.forEach(function(o){var l=document.createElement("label"),i=document.createElement("input");
+   i.type=q.k;i.name=q.id;i.value=o;l.appendChild(i);l.appendChild(document.createTextNode(o));w.appendChild(l)});
+  d.appendChild(w);
+  if(q.x){var e=document.createElement("input");e.type="text";e.id=q.id+"_x";e.placeholder=q.x;d.appendChild(e)}
+ }else{
+  var t=q.k=="area"?document.createElement("textarea"):document.createElement("input");
+  if(q.k=="text")t.type="text";t.id=q.id;d.appendChild(t)}
+ f.appendChild(d)});
+var b=document.createElement("button");b.textContent="Envoyer mes réponses sur WhatsApp";f.appendChild(b);
+var c=document.createElement("button");c.className="alt";c.textContent="Copier mes réponses";f.appendChild(c);
+function build(){
+ var s="Bonjour, voici mes réponses :\n",k=0;
+ Q.forEach(function(q){
+  if(Array.isArray(q))return;k++;var v="";
+  if(q.k=="radio"||q.k=="checkbox"){
+   v=Array.prototype.map.call(f.querySelectorAll('input[name="'+q.id+'"]:checked'),function(i){return i.value}).join(", ");
+   var x=document.getElementById(q.id+"_x");if(x&&x.value.trim())v+=(v?" – ":"")+x.value.trim();
+  }else v=document.getElementById(q.id).value.trim();
+  if(v)s+="\n"+k+". "+q.t+"\n→ "+v});
+ return s}
+function show(m){var o=document.getElementById("out");o.style.display="block";document.getElementById("txt").value=m}
+b.onclick=function(){var m=build();show(m);window.open("https://wa.me/?text="+encodeURIComponent(m),"_blank")};
+c.onclick=function(){var m=build();show(m);
+ try{navigator.clipboard.writeText(m).then(function(){c.textContent="Copié ✓"},function(){document.getElementById("txt").select()})}
+ catch(e){document.getElementById("txt").select()}};
+</script>
+</body>
+</html>
